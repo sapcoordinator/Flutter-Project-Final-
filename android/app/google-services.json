@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "866161296704",
+    "project_id": "login-setup-8bbfc",
+    "storage_bucket": "login-setup-8bbfc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:866161296704:android:7a1d871e36722ecdf226a5",
+        "android_client_info": {
+          "package_name": "com.example.login_page2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxEZSSl4PJZc1OBOxf7sjnah2_eqliBM8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:866161296704:android:1c3b724a8188af10f226a5",
+        "android_client_info": {
+          "package_name": "com.kaira.loginapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxEZSSl4PJZc1OBOxf7sjnah2_eqliBM8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
