@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   final List<UserModel> users;
 
   const HomePage({super.key, required this.users});
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -15,7 +20,8 @@ class HomePage extends StatelessWidget {
         backgroundColor:  Color.fromARGB(255, 80, 58, 161),
         // centerTitle: true,
       ),
-      body: users.isEmpty
+      
+      body: widget.users.isEmpty
           ? const Center(
               child: Text(
                 "No users found",
@@ -24,9 +30,9 @@ class HomePage extends StatelessWidget {
             )
           : ListView.builder(
               padding: const EdgeInsets.all(12),
-              itemCount: users.length,
+              itemCount: widget.users.length,
               itemBuilder: (context, index) {
-                final user = users[index];
+                final user = widget.users[index];
 
                 return Card(
                   elevation: 5,
