@@ -3,9 +3,15 @@ import 'services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'user_storage.dart' as storage;
 import 'models/user_model.dart';
 import 'pages/login_page.dart';
+
+import 'bloc/user/user_bloc.dart';
+import 'repository/user_repository.dart';
 
 //LOAD USERS FROM STORAGE
 Future<List<UserModel>> loadUsers() async {
@@ -26,7 +32,12 @@ void main() async {
 
   storage.users = await loadUsers(); //LOAD SAVED DATA
 
-  runApp(const MyApp());
+  runApp(
+  BlocProvider(
+    create: (_) => UserBloc(UserRepository()),
+    child: const MyApp(),
+  ),
+);
 }
 
 class MyApp extends StatelessWidget {
