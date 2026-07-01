@@ -1,40 +1,44 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'services/notification_service.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'repository/auth_repository.dart';
+import 'package:login_page2/bloc/auth/auth_bloc.dart';
+
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'user_storage.dart' as storage;
-import 'models/user_model.dart';
 import 'pages/login_page.dart';
 
 import 'bloc/user/user_bloc.dart';
 import 'repository/user_repository.dart';
 
 //LOAD USERS FROM STORAGE
-Future<List<UserModel>> loadUsers() async {
-  final prefs = await SharedPreferences.getInstance();
+// Future<List<ApiUserModel>> loadUsers() async {
+//   final prefs = await SharedPreferences.getInstance();
 
-  List<String>? userList = prefs.getStringList('users');
+//   List<String>? userList = prefs.getStringList('users');
 
-  if (userList == null) return [];
+//   if (userList == null) return [];
 
-  return userList
-      .map((user) => UserModel.fromMap(jsonDecode(user)))
-      .toList();
-}
+// }
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); 
     await Firebase.initializeApp();
-    await NotificationService.init(); //IMPORTANT
-
-  storage.users = await loadUsers(); //LOAD SAVED DATA
+    await NotificationService.init(); //IMPORTANT//LOAD SAVED DATA
 
   runApp(
-  BlocProvider(
-    create: (_) => UserBloc(UserRepository()),
+  MultiBlocProvider(
+    providers: [
+
+      BlocProvider<UserBloc>(
+        create: (_) => UserBloc(UserRepository()),
+      ),
+
+      BlocProvider<AuthBloc>(
+        create: (_) => AuthBloc(AuthRepository()),
+      ),
+
+    ],
     child: const MyApp(),
   ),
 );

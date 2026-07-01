@@ -40,4 +40,38 @@ class ApiUserModel {
       photo: json['photo'] ?? '',
     );
   }
+
+  factory ApiUserModel.fromMap(Map<String, dynamic> map) {
+    return ApiUserModel(
+      id: map['id'] ?? 0,
+      name: map['name'] ?? '',
+      company: map['company'] ?? '',
+      username: map['username'] ?? '',
+      email: map['email'] ?? '',
+      address: map['address'] ?? '',
+      zip: map['zip'] ?? '',
+      state: map['state'] ?? '',
+      country: map['country'] ?? '',
+      phone: map['phone'] ?? '',
+      photo: map['photo'] ?? '',
+    );
+  }
+
+  static List<ApiUserModel> users = [];
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'company': company,
+      'username': username,
+      'email': email,
+      'address': address,
+      'zip': zip,
+      'state': state,
+      'country': country,
+      'phone': phone,
+      'photo': photo,
+    };
+  }
 }

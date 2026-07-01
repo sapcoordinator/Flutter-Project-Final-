@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:login_page2/bloc/auth/auth_bloc.dart';
+import 'package:login_page2/bloc/auth/auth_event.dart';
+import 'package:login_page2/pages/signup_page.dart';
 import '../services/notification_service.dart';
-import 'signup_page.dart';
 import 'home_page.dart';
-import '../user_storage.dart' as storage;
+import '../bloc/auth/auth_state.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,8 +20,6 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final phoneController = TextEditingController();
-
-  bool isLoading = false;
 
   void showForgotPasswordPhoneDialog() {
   TextEditingController phoneInput = TextEditingController();
@@ -52,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => HomePage(users: storage.users),
+                    builder: (_) => HomePage(),
                   ),
                 );
               },
@@ -78,52 +79,26 @@ class _LoginPageState extends State<LoginPage> {
 }
 
   // 🔐 EMAIL LOGIN
-  Future<void> login() async {
-    String email = emailController.text.trim();
-    String password = passwordController.text.trim();
+  void login() {
+  String email = emailController.text.trim();
+  String password = passwordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields")),
-      );
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      await NotificationService.show(
-        "Login Successful",
-        "Welcome back 👋",
-      );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomePage(users: storage.users),
-        ),
-      );
-    } on FirebaseAuthException catch (e) {
-      String message = "Login Failed";
-
-      if (e.code == 'user-not-found') {
-        message = "No user found";
-      } else if (e.code == 'wrong-password') {
-        message = "Wrong password";
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    }
-
-    setState(() => isLoading = false);
+  if (email.isEmpty || password.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Please fill all fields"),
+      ),
+    );
+    return;
   }
+
+  context.read<AuthBloc>().add(
+    LoginRequested(
+      email: email,
+      password: password,
+    ),
+  );
+}
 
   // 🔵 GOOGLE LOGIN
 Future<void> signInWithGoogle() async {
@@ -154,7 +129,7 @@ Future<void> signInWithGoogle() async {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => HomePage(users: storage.users),
+        builder: (_) => HomePage(),
       ),
     );
   } catch (e) {
@@ -221,7 +196,7 @@ Future<void> signInWithGoogle() async {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => HomePage(users: storage.users),
+                  builder: (_) =>const HomePage(),
                 ),
               );
             },
@@ -234,7 +209,38 @@ Future<void> signInWithGoogle() async {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocListener<AuthBloc, AuthState>(
+  listener: (context, state) {
+
+    if (state is AuthAuthenticated) {
+
+      NotificationService.show(
+        "Login Successful",
+        "Welcome back 👋",
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const HomePage(),
+        ),
+      );
+    }
+
+    if (state is AuthError) {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(state.message),
+        ),
+      );
+    }
+
+  },
+
+  child: BlocBuilder<AuthBloc, AuthState>(
+  builder: (context, state) {
+  return Scaffold(
       body: Stack(
         children: [
           // 🌈 Background
@@ -308,17 +314,28 @@ Future<void> signInWithGoogle() async {
                       // LOGIN BUTTON
                       SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: isLoading ? null : login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF503AA1),
-                            padding: const EdgeInsets.symmetric(vertical: 15),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: state is AuthLoading ? null : login,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF503AA1),
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                            ),
+                            child: state is AuthLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Login",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                           ),
-                          child: isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white)
-                              : const Text("Login",
-                                  style: TextStyle(color: Colors.white)),
                         ),
                       ),
 
@@ -397,6 +414,9 @@ Future<void> signInWithGoogle() async {
           ),
         ],
       ),
+  );
+  }
+  )
     );
   }
 }

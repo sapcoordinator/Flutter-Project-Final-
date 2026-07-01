@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:login_page2/models/api_user_model.dart';
 import 'package:login_page2/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/user_model.dart';
-import '../user_storage.dart' as storage;
 import 'login_page.dart';
 import 'dart:convert';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_event.dart';
+import '../bloc/auth/auth_state.dart';
 
 
-Future<void> saveUsers(List<UserModel> users) async {
+Future<void> saveUsers(List<ApiUserModel> user) async {
   final prefs = await SharedPreferences.getInstance();
 
   List<String> userList =
-      users.map((user) => jsonEncode(user.toMap())).toList();
+      user.map((user) => jsonEncode(user.toMap())).toList();
 
   await prefs.setStringList('users', userList);
 }
@@ -36,54 +39,59 @@ void initState() {
   final TextEditingController passwordController = TextEditingController();
 
       // FIXED FUNCTION
-  void signup() async {
-    try {
-    //FIREBASE SIGNUP
-    await FirebaseAuth.instance.createUserWithEmailAndPassword(
-      email: emailController.text.trim(),
-      password: passwordController.text.trim(),
-    );
+void signup() {
+  String email = emailController.text.trim();
+  String password = passwordController.text.trim();
 
-    await NotificationService.show(
-      "Signup Successful",
-      "Account created",
-    );
-
-    storage.users.add(
-      UserModel(
-        name: nameController.text.trim(),
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+  if (nameController.text.trim().isEmpty ||
+      email.isEmpty ||
+      password.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Please fill all fields"),
       ),
     );
-
-    await saveUsers(storage.users); // SAVE DATA
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Signup Successful")),
-    );
-
-    Navigator.pop(context); // go back to login
-  } on FirebaseAuthException catch (e) {
-    String message = "Signup Failed";
-
-    if (e.code == 'email-already-in-use') {
-      message = "Email already exists";
-    } else if (e.code == 'weak-password') {
-      message = "Password is too weak";
-    } else if (e.code == 'invalid-email') {
-      message = "Invalid email format";
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    return;
   }
+
+  context.read<AuthBloc>().add(
+    SignupRequested(
+      email: email,
+      password: password,
+    ),
+  );
 }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocListener<AuthBloc, AuthState>(
+  listener: (context, state) {
+    if (state is AuthAuthenticated) {
+      NotificationService.show(
+        "Signup Successful",
+        "Account created",
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Signup Successful"),
+        ),
+      );
+
+      Navigator.pop(context);
+    }
+
+    if (state is AuthError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(state.message),
+        ),
+      );
+    }
+  },
+  child: BlocBuilder<AuthBloc, AuthState>(
+    builder: (context, state) {
+      return Scaffold(
       appBar: AppBar(title: Text("Create your wise Account", 
       style: TextStyle(color: Colors.white),
       ),
@@ -189,7 +197,7 @@ void initState() {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: signup,
+                  onPressed: state is AuthLoading ? null : signup,
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 15),
                           backgroundColor: Color.fromARGB(255, 80, 58, 161),
@@ -198,7 +206,19 @@ void initState() {
                           ),
                         ),
 
-                  child: Text("Sign Up",style: TextStyle(color: Colors.white)),
+                  child: state is AuthLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                "Sign Up",
+                                style: TextStyle(color: Colors.white),
+                              ),
                             ),
                            ),
                            SizedBox(height: 15),
@@ -243,6 +263,9 @@ void initState() {
     //     opacity: const AlwaysStoppedAnimation(6), //light effect 
     //   ),
     // ),
+    );
+    }
+    )
     );
   }
 }
